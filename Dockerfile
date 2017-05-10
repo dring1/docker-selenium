@@ -642,6 +642,31 @@ RUN  wget -nv -O chromedriver_linux${CPU_ARCH}.zip ${CHROME_DRIVER_URL} \
            chromedriver \
   && sudo ln -s /home/seluser/chromedriver /usr/bin
 
+#==================
+# nomachine install 
+#===================
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update -y && apt-get install -y software-properties-common python-software-properties python3-software-properties sudo
+RUN add-apt-repository universe
+RUN apt-get update -y && apt-get install -y vim xterm pulseaudio cups curl libgconf2-4 iputils-ping libnss3-1d libxss1 wget xdg-utils libpango1.0-0 fonts-liberation
+RUN apt-get update -y && apt-get install -y mate-desktop-environment-extras
+# Goto https://www.nomachine.com/download/download&id=10 and change for the latest NOMACHINE_PACKAGE_NAME and MD5 shown in that link to get the latest version.
+ENV NOMACHINE_PACKAGE_NAME nomachine-cloud-server-evaluation_5.2.21_2_amd64.deb
+ENV NOMACHINE_MD5 e973bf011d5e04c5f58c7f65e13fe50f
+
+# Install nomachine, change password and username to whatever you want here
+RUN curl -fSL "http://download.nomachine.com/download/5.2/Linux/${NOMACHINE_PACKAGE_NAME}" -o nomachine.deb \
+&& echo "${NOMACHINE_MD5} *nomachine.deb" | md5sum -c - \
+&& dpkg -i nomachine.deb \
+&& groupadd -r nomachine -g 433 \
+&& useradd -u 431 -r -g nomachine -d /home/nomachine -s /bin/bash -c "NoMachine" nomachine \
+&& mkdir /home/nomachine \
+&& chown -R nomachine:nomachine /home/nomachine \
+&& echo 'nomachine:nomachine' | chpasswd
+
+EXPOSE 4080 4443
+
 #=================
 # Supervisor conf
 #=================
@@ -827,7 +852,7 @@ ENV FIREFOX_VERSION="${FF_VER}" \
   SELENIUM_HUB_PARAMS="" \
   SELENIUM_NODE_PARAMS="" \
   SELENIUM_NODE_PROXY_PARAMS="" \
-  CHROME_ARGS="--no-sandbox --disable-gpu --disable-infobars" \
+  CHROME_ARGS="--no-sandbox --disable-gpu --disable-infobars --start-maximized" \
   CHROME_ADDITIONAL_ARGS="" \
   CHROME_VERBOSELOGGING="true" \
   MAX_INSTANCES=1 \
@@ -851,6 +876,10 @@ ENV FIREFOX_VERSION="${FF_VER}" \
   VNC_PASSWORD=no \
   NOVNC_PORT="${DEFAULT_NOVNC_PORT}" \
   NOVNC="false" \
+  NOMACHINE="false" \
+  NOMACHINE_PORT_4000="4000" \
+  NOMACHINE_PORT_4080="4080" \
+  NOMACHINE_PORT_4443="4443" \
   SUPERVISOR_HTTP_PORT="${DEFAULT_SUPERVISOR_HTTP_PORT}" \
   SUPERVISOR_HTTP_USERNAME="supervisorweb" \
   SUPERVISOR_HTTP_PASSWORD="somehttpbasicauthpwd" \
